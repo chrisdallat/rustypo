@@ -10,6 +10,8 @@ pub use editor::Position;
 pub use document::Document;
 pub use rows::Row;
 
+// TODO: Scrolling full document with cursor, <<<4SCROLLING4>>>
+
 fn main() {
     println!("Starting Rustypo, Enter Text...");  
 
