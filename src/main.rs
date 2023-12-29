@@ -16,16 +16,19 @@ fn main() {
     let _stdout = stdout().into_raw_mode().unwrap();
 
     for b in stdin().bytes() {
-        let b = b.unwrap();
-        let c = b as char;
-        if c.is_control() {                 //check for control keys 
-            println!("{:?} \r", b); 
-        } else {
-            println!("{:?} ({})\r", b, c); 
+        match b {
+            Ok(b) => {
+                let c = b as char;
+                if c.is_control() {
+                    println!("{:?} \r", b); 
+                } else {
+                    println!("{:?} ({})\r", b, c); 
+                }
+                if b == to_cntrl_byte('c'){ //cant use ctrl q - is a hotkey on my ide!
+                    break;
+                }
+            }
+            Err(err) => die(err),
         } 
-        
-        if b == to_cntrl_byte('q'){ 
-            break;
-        }
     }
 }
