@@ -1,3 +1,4 @@
+#![warn(clippy::all)]
 mod editor;
 
 use editor::Editor;
@@ -5,7 +6,7 @@ use editor::Editor;
 fn main() {
     println!("Starting Rustypo, Enter Text...");  
 
-    let editor = Editor {};
+    let editor = Editor::default();
     editor.run();
 }
 
