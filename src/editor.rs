@@ -17,6 +17,7 @@ pub struct Editor {
     should_quit: bool,
     terminal: Terminal,
     cursor_pos: Position,
+    offset: Position,
     document: Document,
 }
 
@@ -51,6 +52,7 @@ impl Editor {
             terminal: Terminal::default().expect("Failed to initialize Terminal"),
             document,
             cursor_pos: Position::default(),
+            offset: Position::default(),
         }
     }
 
@@ -82,13 +84,31 @@ impl Editor {
             | Key::Home => self.move_cursor(pressed_key),
             _ => (),
         }
+        self.scroll();
         Ok(())
+    }
+
+    fn scroll(&mut self) {
+        let Position {x, y} = self.cursor_pos;
+        let width = self.terminal.size().width as usize;
+        let height = self.terminal.size().height as usize;
+        let offset = &mut self.offset;
+        if y < offset.y {
+            offset.y = y;
+        } else if y >= offset.y.saturating_add(height) {
+                offset.y = y.saturating_sub(height).saturating_add(1);
+        }
+        if x < offset.x {
+            offset.x = x;
+        } else if x >= offset.x.saturating_add(height) {
+            offset.x = x.saturating_sub(width).saturating_add(1);
+        }
     }
 
     fn move_cursor(&mut self, key: Key) {
         let Position { mut x, mut y} = self.cursor_pos;
         let size = self.terminal.size();
-        let height = size.height.saturating_add(1) as usize;
+        let height = self.document.len();
         let width = size.height.saturating_add(1) as usize;
         match key {
             Key::Up => y = y.saturating_sub(1),
@@ -124,8 +144,9 @@ impl Editor {
     } 
 
     pub fn draw_row(&self, row: &Row) {
-        let start = 0;
-        let end = self.terminal.size().width as usize;
+        let width = self.terminal.size().width as usize;
+        let start = self.offset.x;
+        let end = self.offset.x + width;
         let row = row.render(start, end);
         println!("{}\r", row);
     }
@@ -134,7 +155,7 @@ impl Editor {
         let height = self.terminal.size().height;
         for terminal_row in 0..height - 1 {
             Terminal::clear_current_line();
-            if let Some(row) = self.document.row(terminal_row as usize) {
+            if let Some(row) = self.document.row(terminal_row as usize + self.offset.y) {
                 self.draw_row(row);
             } else if self.document.is_empty() && terminal_row == height / 3 {
                 self.draw_welcome_msg();
