@@ -64,7 +64,11 @@ impl Editor {
             println!("Program Exit\r");
         } else {
             self.draw_rows();
-            Terminal::cursor_pos(&self.cursor_pos);
+            Terminal::cursor_pos(&Position {
+                x: self.cursor_pos.x.saturating_sub(self.offset.x),
+                y: self.cursor_pos.y.saturating_sub(self.offset.y),
+            });
+
         }
         Terminal::cursor_show();
         Terminal::flush()
@@ -106,10 +110,16 @@ impl Editor {
     }
 
     fn move_cursor(&mut self, key: Key) {
+
         let Position { mut x, mut y} = self.cursor_pos;
         let size = self.terminal.size();
         let height = self.document.len();
-        let width = size.height.saturating_add(1) as usize;
+        let mut width = if let Some(row) = self.document.row(y) {
+            row.len()
+        } else {
+            0
+        };
+
         match key {
             Key::Up => y = y.saturating_sub(1),
             Key::Down => {
@@ -129,7 +139,17 @@ impl Editor {
             Key::End => x = width,
             _ => (),
         }
+        width = if let Some(row) = self.document.row(y) {
+            row.len()
+        } else {
+            0
+        };
+        if x > width {
+            x = width;
+        }
+        
         self.cursor_pos = Position {x, y}
+
     }
 
     fn draw_welcome_msg(&self) {
