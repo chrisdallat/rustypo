@@ -111,8 +111,20 @@ impl Editor {
         match pressed_key {
             Key::Ctrl('c') => self.should_quit = true,
             Key::Char(c) => {
-                self.document.insert(&self.cursor_pos, c);
-                self.move_cursor(Key::Right);
+                if c == '\t' {
+                    self.document.insert(&self.cursor_pos, ' ');
+                    self.move_cursor(Key::Right);
+                    self.document.insert(&self.cursor_pos, ' ');
+                    self.move_cursor(Key::Right);
+                    self.document.insert(&self.cursor_pos, ' ');
+                    self.move_cursor(Key::Right);
+                    self.document.insert(&self.cursor_pos, ' ');
+                    self.move_cursor(Key::Right);
+                   
+                } else {
+                    self.document.insert(&self.cursor_pos, c);
+                    self.move_cursor(Key::Right);
+                }
             }
             Key::Delete => self.document.delete(&self.cursor_pos),
             Key::Backspace => {

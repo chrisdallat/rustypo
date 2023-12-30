@@ -25,6 +25,8 @@ impl Document {
 
     }
 
+    // TODO:: write save function to save files. 
+    // 
     pub fn save(_filename: &str) -> Result<() , std::io::Error> {
         let message: String = "hello world!".to_string();
         let mut _new_file = fs::File::create("new_file.txt").unwrap();
@@ -32,6 +34,8 @@ impl Document {
             fs::write("new_file.txt", message).unwrap();
         })
     }
+    // 
+    //
 
     pub fn row(&self, index: usize) -> Option<&Row> {
         self.rows.get(index)
