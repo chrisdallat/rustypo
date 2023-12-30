@@ -66,6 +66,7 @@ impl Editor {
             let filename = &args[1];
             // Document::open(&filename).unwrap_or_default()
             let doc = Document::open(&filename);
+            let _save_doc = Document::save(&filename);
             if doc.is_ok() {
                 doc.unwrap()
             } else {
@@ -207,6 +208,7 @@ impl Editor {
         self.cursor_pos = Position {x, y}
 
     }
+
 
     fn draw_welcome_msg(&self) {
         let mut welcome_msg = format!("RusTypo -- version {}", VERSION);

@@ -1,6 +1,7 @@
 use crate::Position;
 use crate::Row;
-use std::fs;
+use std::fs::{self, File};
+use std::io::Write;
 
 #[derive(Default)]
 pub struct Document {
@@ -22,6 +23,14 @@ impl Document {
             filename: Some(filename.to_string()),
         })
 
+    }
+
+    pub fn save(_filename: &str) -> Result<() , std::io::Error> {
+        let message: String = "hello world!".to_string();
+        let mut _new_file = fs::File::create("new_file.txt").unwrap();
+        Ok({
+            fs::write("new_file.txt", message).unwrap();
+        })
     }
 
     pub fn row(&self, index: usize) -> Option<&Row> {
