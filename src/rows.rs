@@ -29,11 +29,11 @@ impl Row {
             .skip(start)
             .take(end-start)
         {
-            if grapheme == "\t" {
-                result.push_str("    ");
-            } else {
+            // if grapheme == "\t" {
+            //     result.push_str("    ");
+            // } else {
                 result.push_str(grapheme);
-            }
+            // }
             
         }
         result
