@@ -3,14 +3,34 @@ use crate::Row;
 use crate::Terminal;
 
 use std::env;
+use std::time::Duration;
+use std::time::Instant;
+use termion::color;
 use termion::event::Key;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+const STATBAR_COLOR: color::Rgb = color::Rgb(239, 239, 239);
+const STATBAR_TEXT_COLOR: color::Rgb = color::Rgb(63, 63, 63);
 
 #[derive(Default)]
 pub struct Position {
     pub x: usize,
     pub y: usize,
+}
+
+struct StatusMessage {
+    text: String, 
+    time: Instant,
+    
+}
+
+impl StatusMessage {
+    fn from(message: String) -> Self {
+        Self {
+            text: message,
+            time: Instant::now(),
+        }
+    }
 }
 
 pub struct Editor {
@@ -19,6 +39,7 @@ pub struct Editor {
     cursor_pos: Position,
     offset: Position,
     document: Document,
+    status_message: StatusMessage,
 }
 
 impl Editor {
@@ -40,19 +61,27 @@ impl Editor {
     pub fn default() -> Self {
 
         let args: Vec<String> = env::args().collect();
+        let mut initial_status = String::from("Ctrl-C = QUIT");
         let document = if args.len() > 1 {
             let filename = &args[1];
-            Document::open(&filename).unwrap_or_default()
+            // Document::open(&filename).unwrap_or_default()
+            let doc = Document::open(&filename);
+            if doc.is_ok() {
+                doc.unwrap()
+            } else {
+                initial_status = format!("Error: could not open file: {}", filename);
+                Document::default()
+            }
         } else {
-            Document::default()
+            Document::default()   
         };
-
         Self {
             should_quit: false,
             terminal: Terminal::default().expect("Failed to initialize Terminal"),
             document,
             cursor_pos: Position::default(),
             offset: Position::default(),
+            status_message: StatusMessage::from(initial_status),
         }
     }
 
@@ -64,6 +93,8 @@ impl Editor {
             println!("Program Exit\r");
         } else {
             self.draw_rows();
+            self.draw_status_bar();
+            self.draw_message_bar();
             Terminal::cursor_pos(&Position {
                 x: self.cursor_pos.x.saturating_sub(self.offset.x),
                 y: self.cursor_pos.y.saturating_sub(self.offset.y),
@@ -187,7 +218,7 @@ impl Editor {
 
     fn draw_rows(&self) {
         let height = self.terminal.size().height;
-        for terminal_row in 0..height - 1 {
+        for terminal_row in 0..height {
             Terminal::clear_current_line();
             if let Some(row) = self.document.row(terminal_row as usize + self.offset.y) {
                 self.draw_row(row);
@@ -196,6 +227,45 @@ impl Editor {
             } else {
                 println!("~\r");
             }
+        }
+    }
+    
+    fn draw_status_bar(&self) {
+
+        let mut status;
+        let width = self.terminal.size().width as usize;
+        let mut filename = "[No Name]".to_string();
+        if let Some(name) = &self.document.filename {
+            filename = name.clone();
+            filename.truncate(20);
+        }
+        status = format!("{} - {} lines", filename, self.document.len());
+      
+        let line_indicator = format!(
+            "{}/{}",
+            self.cursor_pos.y.saturating_add(1),
+            self.document.len()
+        );
+        let len = status.len() + line_indicator.len();
+        if width > len {
+            status.push_str(&" ".repeat(width - len));
+        }
+        status = format!("{}{}", status, line_indicator);
+        status.truncate(width);
+        Terminal::set_bg_color(STATBAR_COLOR);
+        Terminal::set_fg_color(STATBAR_TEXT_COLOR);
+        println!("{}\r", status);
+        Terminal::reset_bg_color();
+        Terminal::reset_fg_color();
+    }
+
+    fn draw_message_bar(&self) {
+        Terminal::clear_current_line();
+        let message = &self.status_message;
+        if Instant::now() - message.time < Duration::new(5, 0) {
+            let mut text = message.text.clone();
+            text.truncate(self.terminal.size().width as usize);
+            print!("{}", text);
         }
     }
 
